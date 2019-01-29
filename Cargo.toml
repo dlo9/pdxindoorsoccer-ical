@@ -1,0 +1,12 @@
+[package]
+name = "pdxindoorsoccer-ical"
+version = "0.1.0"
+authors = ["David Orchard <if_coding@fastmail.com>"]
+edition = "2018"
+
+[dependencies]
+icalendar = "0.5.0"
+chrono = "0.4.6"
+chrono-tz = "0.5.0"
+failure = "0.1.5"
+regex = "1.1.0"
