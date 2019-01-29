@@ -5,22 +5,26 @@ use failure::*;
 use regex::Regex;
 use std::io::BufRead;
 
-fn main() {
+fn main() -> Result<(), Error> {
     let team_name = "Real Portland".to_string().to_uppercase();
     // todo: trim results
     let r = Regex::new(r"^[A-Z]{3} [A-Z]{3} [0-9 ]{2} +[0-9 ]{2}:[0-9]{2} [AP]M  (.*) vs (.*)$").unwrap();
-    std::io::stdin().lock().lines().for_each(|i| {
-        let i = i.unwrap();
-        let groups = r.captures(&i);
+    for line in std::io::stdin().lock().lines() {
+        let line = line.unwrap();
+        let groups = r.captures(&line);
         if groups.is_some() {
             let groups = groups.unwrap();
             let home = groups.get(1).unwrap().as_str().trim();
             let away = groups.get(2).unwrap().as_str().trim();
-            if (home == team_name || away == team_name) {
-                println!("{}", i);
+            if home == team_name || away == team_name {
+                let line = line.split_at(22).0.to_string() + "2019";
+                println!("{}", line);
+                let date = US::Pacific.datetime_from_str(&line, "%a %b %e %I:%M %p %Y").with_context(|e| {format!("Error parsing datetime string: {}", e)})?;
             }
         }
-    });
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]
