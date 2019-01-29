@@ -11,8 +11,14 @@ fn main() {
     let r = Regex::new(r"^[A-Z]{3} [A-Z]{3} [0-9 ]{2} +[0-9 ]{2}:[0-9]{2} [AP]M  (.*) vs (.*)$").unwrap();
     std::io::stdin().lock().lines().for_each(|i| {
         let i = i.unwrap();
-        if r.is_match(&i) {
-            println!("{}", i);
+        let groups = r.captures(&i);
+        if groups.is_some() {
+            let groups = groups.unwrap();
+            let home = groups.get(1).unwrap().as_str().trim();
+            let away = groups.get(2).unwrap().as_str().trim();
+            if (home == team_name || away == team_name) {
+                println!("{}", i);
+            }
         }
     });
 }
