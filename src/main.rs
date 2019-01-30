@@ -4,7 +4,6 @@ use chrono_tz::*;
 use failure::*;
 use regex::Regex;
 use std::io::BufRead;
-#[macro_use]
 use lazy_static::*;
 
 fn main() -> Result<(), Error> {
