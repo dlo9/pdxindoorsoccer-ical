@@ -25,7 +25,7 @@ fn main() -> Result<(), Error> {
                 let date = US::Pacific.datetime_from_str(&line, "%a %b %e %I:%M %p %Y").with_context(|e| {format!("Error parsing datetime string: {}", e)})?;
 
                 let event = Event::new()
-                    .summary(&(home.to_string() + " (home) vs." + away))
+                    .summary(&(home.to_string() + " (home) vs. " + away))
                     .description("Home team brings ball & all colors")
                     // TODO: location?
                     // TODO: set busy
