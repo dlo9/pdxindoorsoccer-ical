@@ -19,20 +19,23 @@ fn main() -> Result<(), Error> {
         }
 
         let game = game.unwrap();
-        let event = Event::new()
-            .summary(&(game.home.to_string() + " (home) vs. " + game.away))
-            .description("Home team brings ball & all colors")
-            .location("Portland Indoor Soccer\n418 SE Main St.\nPortland, OR 97214")
-            // TODO: set busy
-            .starts(game.date)
-            .ends(game.date + Duration::minutes(44+2))
-            .done();
 
-        calendar.push(event);
+        calendar.push(game_to_event(game));
 }
 
     calendar.print().unwrap();
     Ok(())
+}
+
+fn game_to_event<'a>(game: Game<'a, chrono_tz::Tz>) -> Event {
+    Event::new()
+        .summary(&(game.home.to_string() + " (home) vs. " + game.away))
+        .description("Home team brings ball & all colors")
+        .location("Portland Indoor Soccer\n418 SE Main St.\nPortland, OR 97214")
+        // TODO: set busy
+        .starts(game.date)
+        .ends(game.date + Duration::minutes(44+2))
+        .done()
 }
 
 struct Game<'a, Tz: TimeZone> 
