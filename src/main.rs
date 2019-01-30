@@ -84,6 +84,7 @@ mod tests {
         Ok(())
     }
 
+    #[test]
     fn datetime_fewer_spaces_parse() -> Result<(), Error> {
         let mut to_parse = "SUN Jan 20 7:50 PM".to_string();
         // Year isn't specified in string, but must be for parsing
