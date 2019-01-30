@@ -27,7 +27,7 @@ fn main() -> Result<(), Error> {
                 let event = Event::new()
                     .summary(&(home.to_string() + " (home) vs. " + away))
                     .description("Home team brings ball & all colors")
-                    // TODO: location?
+                    .location("Portland Indoor Soccer\n418 SE Main St.\nPortland, OR 97214")
                     // TODO: set busy
                     .starts(date)
                     .ends(date + Duration::minutes(44+2))
