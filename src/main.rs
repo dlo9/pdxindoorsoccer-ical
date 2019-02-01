@@ -46,7 +46,7 @@ fn game_to_event<'a>(game: Game<'a, chrono_tz::Tz>) -> Event {
 }
 
 struct Game<'a, Tz: TimeZone> 
-    where Tz::Offset: Display {
+where Tz::Offset: Display {
     home: &'a str,
     away: &'a str,
     date: DateTime<Tz>,
@@ -84,7 +84,7 @@ mod tests {
 
         let dt = US::Pacific.datetime_from_str(&to_parse, "%a %b %e    %I:%M %p %Y").with_context(|e| {format!("Error parsing datetime string: {}", e)})?;
         assert_eq!("2019-01-20T19:50:00-08:00", dt.to_rfc3339());
-        
+
         Ok(())
     }
 
@@ -96,7 +96,7 @@ mod tests {
 
         let dt = US::Pacific.datetime_from_str(&to_parse, "%a %b %e    %I:%M %p %Y").with_context(|e| {format!("Error parsing datetime string: {}", e)})?;
         assert_eq!("2019-01-20T19:50:00-08:00", dt.to_rfc3339());
-        
+
         Ok(())
     }
 
@@ -109,7 +109,7 @@ mod tests {
         let input = BufReader::new(File::open(input)?);
 
         let calendar = schedule_to_ical(input, &team_name);
-        
+
         let expected = read_to_string(expected)?;
         let actual = calendar?.to_string();
 
@@ -125,9 +125,9 @@ mod tests {
             .filter(|i| !(i.starts_with("DTSTAMP") || i.starts_with("UID")))
             .collect::<Vec<&str>>();
         actual.sort_unstable();
-        
+
         assert_eq!(expected, actual);
-        
+
         Ok(())
     }
 }
