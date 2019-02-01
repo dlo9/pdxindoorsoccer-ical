@@ -27,8 +27,10 @@ fn schedule_to_ical(input: impl BufRead, team_name: &str) -> Result<Calendar, Er
     let mut calendar = Calendar::new();
 
     for line in input.lines() {
-        if let Some(game) = parse_schedule_line(&line.context("Line could not be read")?, team_name)? {
-            calendar.push(game_to_event(game));
+        if let Some(game) = parse_schedule_line(&line.context("Line could not be read")?)? {
+            if game.home == team_name || game.away == team_name {
+                calendar.push(game_to_event(game));
+            }
         }
     }
 
@@ -52,7 +54,7 @@ where Tz::Offset: Display {
     date: DateTime<Tz>,
 }
 
-fn parse_schedule_line<'a>(line: &'a str, team_name: &'a str) -> Result<Option<Game<'a, chrono_tz::Tz>>, Error> {
+fn parse_schedule_line<'a>(line: &'a str) -> Result<Option<Game<'a, chrono_tz::Tz>>, Error> {
     lazy_static! {
         static ref game_regex: Regex = Regex::new(r"^[A-Z]{3} [A-Z]{3} [0-9 ]{2} +[0-9 ]{2}:[0-9]{2} [AP]M  (.*) vs (.*)$").unwrap();
     }
@@ -60,13 +62,10 @@ fn parse_schedule_line<'a>(line: &'a str, team_name: &'a str) -> Result<Option<G
     if let Some(groups) = game_regex.captures(&line) {
         let home = groups.get(1).expect("Game regex missing capture #1").as_str().trim();
         let away = groups.get(2).expect("Game regex missing capture #2").as_str().trim();
-        // TODO: filter elsewhere?
-        if home == team_name || away == team_name {
-            // TODO: test fall schedule for new year's rollover edge case
-            let line = line.split_at(22).0.to_string() + "2019";
-            let date = US::Pacific.datetime_from_str(&line, "%a %b %e %I:%M %p %Y").with_context(|e| {format!("Error parsing datetime string: {}", e)})?;
-            return Ok(Some(Game { home, away, date }));
-        }
+        // TODO: test fall schedule for new year's rollover edge case
+        let line = line.split_at(22).0.to_string() + "2019";
+        let date = US::Pacific.datetime_from_str(&line, "%a %b %e %I:%M %p %Y").with_context(|e| {format!("Error parsing datetime string: {}", e)})?;
+        return Ok(Some(Game { home, away, date }));
     }
 
     Ok(None)
