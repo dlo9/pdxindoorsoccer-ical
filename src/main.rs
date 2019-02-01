@@ -1,19 +1,27 @@
-use icalendar::*;
 use chrono::*;
 use chrono_tz::*;
 use failure::*;
-use regex::Regex;
-use std::io::BufRead;
 use lazy_static::*;
+use icalendar::*;
+use regex::Regex;
+use std::{
+    fmt::Display,
+    fs::*,
+    io::{
+        BufRead,
+        BufReader,
+        stdin,
+    }
+};
 
 fn main() -> Result<(), Error> {
     let team_name = "Real Portland".to_string().to_uppercase();
-    let calendar = schedule_to_ical(std::io::stdin().lock(), &team_name);
+    let calendar = schedule_to_ical(stdin().lock(), &team_name);
     calendar.print().unwrap();
     Ok(())
 }
 
-fn schedule_to_ical(input: impl std::io::BufRead, team_name: &str) -> Calendar {
+fn schedule_to_ical(input: impl BufRead, team_name: &str) -> Calendar {
     let mut calendar = Calendar::new();
 
     for line in input.lines() {
@@ -43,7 +51,7 @@ fn game_to_event<'a>(game: Game<'a, chrono_tz::Tz>) -> Event {
 }
 
 struct Game<'a, Tz: TimeZone> 
-    where Tz::Offset: std::fmt::Display {
+    where Tz::Offset: Display {
     home: &'a str,
     away: &'a str,
     date: DateTime<Tz>,
@@ -106,11 +114,11 @@ mod tests {
         let expected = "test/div3b/expected.ical";
         let team_name = "Real Portland".to_string().to_uppercase();
 
-        let input = std::io::BufReader::new(std::fs::File::open(input)?);
+        let input = BufReader::new(File::open(input)?);
 
         let calendar = schedule_to_ical(input, &team_name);
         
-        let expected = std::fs::read_to_string(expected)?;
+        let expected = read_to_string(expected)?;
         let actual = calendar.to_string();
 
         // Strip UIDs from the file for comparison
