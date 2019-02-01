@@ -121,19 +121,17 @@ mod tests {
         let expected = read_to_string(expected)?;
         let actual = calendar.to_string();
 
-        // Strip UIDs from the file for comparison
-        let uid_regex = Regex::new("UID:[a-f0-9-]+\r\n").unwrap();
-        let expected = uid_regex.replace_all(&expected, "UID:\r\n");
-        let actual = uid_regex.replace_all(&actual, "UID:\r\n");
-
-        let dt_regex = Regex::new("DTSTAMP:[0-9]{8}T[0-9]{6}\r\n").unwrap();
-        let expected = dt_regex.replace_all(&expected, "DTSTAMP:\r\n");
-        let actual = dt_regex.replace_all(&actual, "DTSTAMP:\r\n");
-
         // Sort lines since to_string isn't deterministically ordered
-        let mut expected = expected.split("\r\n").collect::<Vec<&str>>();
+        // Also strip randomized UID & DTSTAMP
+        let mut expected = expected
+            .split("\r\n")
+            .filter(|i| !(i.starts_with("DTSTAMP") || i.starts_with("UID")))
+            .collect::<Vec<&str>>();
         expected.sort_unstable();
-        let mut actual = actual.split("\r\n").collect::<Vec<&str>>();
+        let mut actual = actual
+            .split("\r\n")
+            .filter(|i| !(i.starts_with("DTSTAMP") || i.starts_with("UID")))
+            .collect::<Vec<&str>>();
         actual.sort_unstable();
         
         assert_eq!(expected, actual);
