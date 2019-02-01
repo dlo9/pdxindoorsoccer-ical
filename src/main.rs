@@ -1,3 +1,5 @@
+#![feature(try_trait)]
+
 use chrono::*;
 use chrono_tz::*;
 use failure::*;
@@ -16,27 +18,21 @@ use std::{
 
 fn main() -> Result<(), Error> {
     let team_name = "Real Portland".to_string().to_uppercase();
-    let calendar = schedule_to_ical(stdin().lock(), &team_name);
-    calendar.print().unwrap();
+    let calendar = schedule_to_ical(stdin().lock(), &team_name)?;
+    calendar.print().context("Calendar could not be printed")?;
     Ok(())
 }
 
-fn schedule_to_ical(input: impl BufRead, team_name: &str) -> Calendar {
+fn schedule_to_ical(input: impl BufRead, team_name: &str) -> Result<Calendar, Error> {
     let mut calendar = Calendar::new();
 
     for line in input.lines() {
-        let line = line.unwrap();
-        let game = parse_schedule_line(&line, team_name);
-        if game.is_err() {
-            continue;
+        if let Some(game) = parse_schedule_line(&line.context("Line could not be read")?, team_name)? {
+            calendar.push(game_to_event(game));
         }
-
-        let game = game.unwrap();
-
-        calendar.push(game_to_event(game));
     }
 
-    calendar
+    Ok(calendar)
 }
 
 fn game_to_event<'a>(game: Game<'a, chrono_tz::Tz>) -> Event {
@@ -44,7 +40,6 @@ fn game_to_event<'a>(game: Game<'a, chrono_tz::Tz>) -> Event {
         .summary(&(game.home.to_string() + " (home) vs. " + game.away))
         .description("Home team brings ball & all colors")
         .location("Portland Indoor Soccer\n418 SE Main St.\nPortland, OR 97214")
-        // TODO: set busy
         .starts(game.date)
         .ends(game.date + Duration::minutes(44+2))
         .done()
@@ -57,27 +52,24 @@ struct Game<'a, Tz: TimeZone>
     date: DateTime<Tz>,
 }
 
-fn parse_schedule_line<'a>(line: &'a str, team_name: &'a str) -> Result<Game<'a, chrono_tz::Tz>, Error> {
+fn parse_schedule_line<'a>(line: &'a str, team_name: &'a str) -> Result<Option<Game<'a, chrono_tz::Tz>>, Error> {
     lazy_static! {
         static ref game_regex: Regex = Regex::new(r"^[A-Z]{3} [A-Z]{3} [0-9 ]{2} +[0-9 ]{2}:[0-9]{2} [AP]M  (.*) vs (.*)$").unwrap();
     }
 
-    let groups = game_regex.captures(&line);
-    if groups.is_some() {
-        let groups = groups.unwrap();
-        let home = groups.get(1).unwrap().as_str().trim();
-        let away = groups.get(2).unwrap().as_str().trim();
-        // TODO: filter elsewhere
+    if let Some(groups) = game_regex.captures(&line) {
+        let home = groups.get(1).expect("Game regex missing capture #1").as_str().trim();
+        let away = groups.get(2).expect("Game regex missing capture #2").as_str().trim();
+        // TODO: filter elsewhere?
         if home == team_name || away == team_name {
             // TODO: test fall schedule for new year's rollover edge case
             let line = line.split_at(22).0.to_string() + "2019";
             let date = US::Pacific.datetime_from_str(&line, "%a %b %e %I:%M %p %Y").with_context(|e| {format!("Error parsing datetime string: {}", e)})?;
-            return Ok(Game { home, away, date });
+            return Ok(Some(Game { home, away, date }));
         }
     }
 
-    // TODO: error upstream, with a better description 
-    Err(format_err!("misc error"))
+    Ok(None)
 }
 
 #[cfg(test)]
@@ -119,7 +111,7 @@ mod tests {
         let calendar = schedule_to_ical(input, &team_name);
         
         let expected = read_to_string(expected)?;
-        let actual = calendar.to_string();
+        let actual = calendar?.to_string();
 
         // Sort lines since to_string isn't deterministically ordered
         // Also strip randomized UID & DTSTAMP
