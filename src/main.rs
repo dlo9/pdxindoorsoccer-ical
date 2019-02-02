@@ -27,7 +27,7 @@ fn main() -> Result<(), Error> {
 fn schedule_to_ical(input: impl BufRead, team_name: &str) -> Result<Calendar, Error> {
     let mut calendar = Calendar::new();
     let mut year = 0;
-    let mut last_month = 1;
+    let mut last_month = 0;
 
     for line in input.lines() {
         let line = line.context("Line could not be read")?;
@@ -38,7 +38,7 @@ fn schedule_to_ical(input: impl BufRead, team_name: &str) -> Result<Calendar, Er
             }
         } else if let Some(game) = parse_game_line(&line, year)? {
             // Handle year rollover
-            if game.datetime.date().month() == 1 && last_month != 1 {
+            if game.datetime.date().month() < last_month {
                 year += 1;
             }
 
