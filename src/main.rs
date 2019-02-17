@@ -9,10 +9,8 @@ use icalendar::*;
 use regex::Regex;
 use std::{
     fmt::Display,
-    fs::*,
     io::{
         BufRead,
-        BufReader,
         stdin,
     }
 };
