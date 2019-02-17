@@ -151,6 +151,11 @@ fn parse_game_line<'a>(line: &'a str, year: u16) -> Result<Option<Game<'a, chron
 mod tests {
     use super::*;
 
+    use std:: {
+        fs::*,
+        io::BufReader
+    };
+
     #[test]
     fn datetime_parse() -> Result<(), Error> {
         let mut to_parse = "SUN Jan 20    7:50 PM".to_string();

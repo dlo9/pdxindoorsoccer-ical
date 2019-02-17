@@ -1,0 +1,3 @@
+# Update input file from url with:
+# curl (cat ./url_input.txt | tail -1) | iconv -f cp1252 -t UTF-8 > input.txt
+https://pdxindoorsoccer.com/wp-content/schedules/2fall/men/DIV%203B.TXT
