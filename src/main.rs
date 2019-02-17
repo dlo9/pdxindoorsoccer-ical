@@ -3,6 +3,7 @@
 use chrono::*;
 use chrono_tz::*;
 use failure::*;
+use heck::TitleCase;
 use lazy_static::*;
 use icalendar::*;
 use regex::Regex;
@@ -45,12 +46,30 @@ fn schedule_to_ical(input: impl BufRead, team_name: &str) -> Result<Calendar, Er
             last_month = game.datetime.date().month();
 
             if game.home == team_name || game.away == team_name {
+                let home = fc_to_uppercase(game.home.to_title_case());
+                let away = fc_to_uppercase(game.away.to_title_case());
+                let game = Game { home: &home, away: &away, ..game };
                 calendar.push(game_to_event(game));
             }
         }
     }
 
     Ok(calendar)
+}
+
+/// Forces the casing of FC to uppercase
+fn fc_to_uppercase(s: String) -> String {
+    lazy_static! {
+        static ref fc_regex: Regex = Regex::new(r#"(.*\b)((?i)\w*fc)(\b.*)"#).unwrap();
+    }
+
+    fc_regex.captures(&s).map(|c| {
+        format!("{}{}{}",
+                c.get(1).unwrap().as_str(),
+                c.get(2).unwrap().as_str().to_uppercase(),
+                c.get(3).unwrap().as_str()
+               )
+    }).unwrap_or(s)
 }
 
 fn game_to_event<'a>(game: Game<'a, chrono_tz::Tz>) -> Event {
@@ -63,7 +82,7 @@ fn game_to_event<'a>(game: Game<'a, chrono_tz::Tz>) -> Event {
         .done()
 }
 
-struct Game<'a, Tz: TimeZone> 
+struct Game<'a, Tz: TimeZone>
 where Tz::Offset: Display {
     home: &'a str,
     away: &'a str,
@@ -168,5 +187,50 @@ mod tests {
         assert_eq!(expected, actual);
 
         Ok(())
+    }
+
+    #[test]
+    fn fc_to_uppercase_at_start() {
+        let s = "fc is at the start";
+        let expected = "FC is at the start";
+        assert_eq!(expected, fc_to_uppercase(s.into()));
+
+        let s = "nrfc is at the start";
+        let expected = "NRFC is at the start";
+        assert_eq!(expected, fc_to_uppercase(s.into()));
+
+        let s = "fcnr is at the start";
+        let expected = s.to_string();
+        assert_eq!(expected, fc_to_uppercase(s.into()));
+    }
+
+    #[test]
+    fn fc_to_uppercase_at_end() {
+        let s = "At the end is fc";
+        let expected = "At the end is FC";
+        assert_eq!(expected, fc_to_uppercase(s.into()));
+
+        let s = "At the end is nrfc";
+        let expected = "At the end is NRFC";
+        assert_eq!(expected, fc_to_uppercase(s.into()));
+
+        let s = "At the end is fcnr";
+        let expected = s.to_string();
+        assert_eq!(expected, fc_to_uppercase(s.into()));
+    }
+
+    #[test]
+    fn fc_to_uppercase_in_middle() {
+        let s = "We have fc in the middle";
+        let expected = "We have FC in the middle";
+        assert_eq!(expected, fc_to_uppercase(s.into()));
+
+        let s = "We have nrfc in the middle";
+        let expected = "We have NRFC in the middle";
+        assert_eq!(expected, fc_to_uppercase(s.into()));
+
+        let s = "We have fcnr in the middle";
+        let expected = s.to_string();
+        assert_eq!(expected, fc_to_uppercase(s.into()));
     }
 }
