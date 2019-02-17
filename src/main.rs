@@ -2,6 +2,7 @@
 
 use chrono::*;
 use chrono_tz::*;
+use clap_verbosity_flag::Verbosity;
 use failure::*;
 use heck::TitleCase;
 use lazy_static::*;
@@ -12,18 +13,52 @@ use std::{
     io::{
         BufRead,
         stdin,
-    }
+    },
+    path::PathBuf,
 };
+use structopt::*;
+
+#[derive(Debug, StructOpt)]
+#[structopt(name = "pdxindoorsoccer-ical", rename_all = "kebab-case", raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
+struct Cli {
+    // TODO: directory should be XDG_CONFIG_HOME or HOME
+    /// Configuration file to use
+    #[structopt(short = "c", long)]
+    config: Option<PathBuf>,
+
+    #[structopt(flatten)]
+    verbosity: Verbosity,
+
+    /// Output ical file. If not specified, stdout is used. 
+    // TODO: unconnected
+    #[structopt(short = "o", long)]
+    output: Option<PathBuf>,
+
+    /// Dry run
+    #[structopt(short = "n", long)]
+    dry_run: bool,
+
+    /// Input text file. If not specified, stdin is used. 
+    // TODO: accept - as stdin?
+    #[structopt(short = "i", long)]
+    input: Option<PathBuf>,
+
+    /// Team name to filter to
+    // TODO: Make optional, no filter doesn't filter
+    #[structopt(short = "t", long)]
+    team_name: String,
+}
+
 
 fn main() -> Result<(), Error> {
-    //let team_name = "Real Portland".to_string().to_uppercase();
-    let team_name = "Hyventus".to_string().to_uppercase();
+    let args: Cli = StructOpt::from_args(None);
+    let team_name = args.team_name.to_uppercase();
     let calendar = schedule_to_ical(stdin().lock(), &team_name)?;
     calendar.print().context("Calendar could not be printed")?;
     Ok(())
 }
 
-fn schedule_to_ical(input: impl BufRead, team_name: &str) -> Result<Calendar, Error> {
+fn schedule_to_ical(input: impl BufRead, team_name_uppercase: &str) -> Result<Calendar, Error> {
     let mut calendar = Calendar::new();
     let mut year = 0;
     let mut last_month = 0;
@@ -43,7 +78,7 @@ fn schedule_to_ical(input: impl BufRead, team_name: &str) -> Result<Calendar, Er
 
             last_month = game.datetime.date().month();
 
-            if game.home == team_name || game.away == team_name {
+            if game.home == team_name_uppercase || game.away == team_name_uppercase {
                 let home = fc_to_uppercase(game.home.to_title_case());
                 let away = fc_to_uppercase(game.away.to_title_case());
                 let game = Game { home: &home, away: &away, ..game };
