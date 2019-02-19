@@ -93,10 +93,10 @@ fn schedule_to_ical(input: impl BufRead, team_name_uppercase: &str) -> Result<Ca
 /// Forces the casing of FC to uppercase
 fn fc_to_uppercase(s: String) -> String {
     lazy_static! {
-        static ref fc_regex: Regex = Regex::new(r#"(.*\b)((?i)\w*fc)(\b.*)"#).unwrap();
+        static ref FC_REGEX: Regex = Regex::new(r#"(.*\b)((?i)\w*fc)(\b.*)"#).unwrap();
     }
 
-    fc_regex.captures(&s).map(|c| {
+    FC_REGEX.captures(&s).map(|c| {
         format!("{}{}{}",
                 c.get(1).unwrap().as_str(),
                 c.get(2).unwrap().as_str().to_uppercase(),
@@ -124,18 +124,18 @@ where Tz::Offset: Display {
 
 fn parse_year_line<'a>(line: &'a str) -> Option<u16> {
     lazy_static! {
-        static ref year_regex: Regex = Regex::new(r" CUP ([0-9]{4})\s+$").unwrap();
+        static ref YEAR_REGEX: Regex = Regex::new(r" CUP ([0-9]{4})\s+$").unwrap();
     }
 
-    year_regex.captures(&line).and_then(|groups| Some(groups.get(1).expect("Year regex missing capture #1").as_str().parse::<u16>().expect("Year int parse failed")))
+    YEAR_REGEX.captures(&line).and_then(|groups| Some(groups.get(1).expect("Year regex missing capture #1").as_str().parse::<u16>().expect("Year int parse failed")))
 }
 
 fn parse_game_line<'a>(line: &'a str, year: u16) -> Result<Option<Game<'a, chrono_tz::Tz>>, Error> {
     lazy_static! {
-        static ref game_regex: Regex = Regex::new(r"^[A-Z]{3} ([A-Z]{3} [0-9 ]{2} +[0-9 ]{2}:[0-9]{2} [AP]M)  (.*) vs (.*)$").unwrap();
+        static ref GAME_REGEX: Regex = Regex::new(r"^[A-Z]{3} ([A-Z]{3} [0-9 ]{2} +[0-9 ]{2}:[0-9]{2} [AP]M)  (.*) vs (.*)$").unwrap();
     }
 
-    if let Some(groups) = game_regex.captures(&line) {
+    if let Some(groups) = GAME_REGEX.captures(&line) {
         let datetime = groups.get(1).expect("Game regex missing capture #1").as_str().trim().to_string() + " " + &year.to_string();
         let home = groups.get(2).expect("Game regex missing capture #2").as_str().trim();
         let away = groups.get(3).expect("Game regex missing capture #3").as_str().trim();
