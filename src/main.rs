@@ -5,21 +5,22 @@ use chrono_tz::*;
 use clap_verbosity_flag::Verbosity;
 use failure::*;
 use heck::TitleCase;
-use lazy_static::*;
 use icalendar::*;
+use lazy_static::*;
 use regex::Regex;
 use std::{
     fmt::Display,
-    io::{
-        BufRead,
-        stdin,
-    },
+    io::{stdin, BufRead},
     path::PathBuf,
 };
 use structopt::*;
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "pdxindoorsoccer-ical", rename_all = "kebab-case", raw(setting = "structopt::clap::AppSettings::ColoredHelp"))]
+#[structopt(
+    name = "pdxindoorsoccer-ical",
+    rename_all = "kebab-case",
+    raw(setting = "structopt::clap::AppSettings::ColoredHelp")
+)]
 struct Cli {
     // TODO: directory should be XDG_CONFIG_HOME or HOME
     /// Configuration file to use
@@ -29,7 +30,7 @@ struct Cli {
     #[structopt(flatten)]
     verbosity: Verbosity,
 
-    /// Output ical file. If not specified, stdout is used. 
+    /// Output ical file. If not specified, stdout is used.
     // TODO: unconnected
     #[structopt(short = "o", long)]
     output: Option<PathBuf>,
@@ -38,7 +39,7 @@ struct Cli {
     #[structopt(short = "n", long)]
     dry_run: bool,
 
-    /// Input text file. If not specified, stdin is used. 
+    /// Input text file. If not specified, stdin is used.
     // TODO: accept - as stdin?
     #[structopt(short = "i", long)]
     input: Option<PathBuf>,
@@ -48,7 +49,6 @@ struct Cli {
     #[structopt(short = "t", long)]
     team_name: String,
 }
-
 
 fn main() -> Result<(), Error> {
     let args: Cli = StructOpt::from_args(None);
@@ -81,7 +81,11 @@ fn schedule_to_ical(input: impl BufRead, team_name_uppercase: &str) -> Result<Ca
             if game.home == team_name_uppercase || game.away == team_name_uppercase {
                 let home = fc_to_uppercase(game.home.to_title_case());
                 let away = fc_to_uppercase(game.away.to_title_case());
-                let game = Game { home: &home, away: &away, ..game };
+                let game = Game {
+                    home: &home,
+                    away: &away,
+                    ..game
+                };
                 calendar.push(game_to_event(game));
             }
         }
@@ -96,13 +100,17 @@ fn fc_to_uppercase(s: String) -> String {
         static ref FC_REGEX: Regex = Regex::new(r#"(.*\b)((?i)\w*fc)(\b.*)"#).unwrap();
     }
 
-    FC_REGEX.captures(&s).map(|c| {
-        format!("{}{}{}",
+    FC_REGEX
+        .captures(&s)
+        .map(|c| {
+            format!(
+                "{}{}{}",
                 c.get(1).unwrap().as_str(),
                 c.get(2).unwrap().as_str().to_uppercase(),
                 c.get(3).unwrap().as_str()
-               )
-    }).unwrap_or(s)
+            )
+        })
+        .unwrap_or(s)
 }
 
 fn game_to_event<'a>(game: Game<'a, chrono_tz::Tz>) -> Event {
@@ -111,12 +119,14 @@ fn game_to_event<'a>(game: Game<'a, chrono_tz::Tz>) -> Event {
         .description("Home team brings ball & all colors")
         .location("Portland Indoor Soccer\n418 SE Main St.\nPortland, OR 97214")
         .starts(game.datetime)
-        .ends(game.datetime + Duration::minutes(44+2))
+        .ends(game.datetime + Duration::minutes(44 + 2))
         .done()
 }
 
 struct Game<'a, Tz: TimeZone>
-where Tz::Offset: Display {
+where
+    Tz::Offset: Display,
+{
     home: &'a str,
     away: &'a str,
     datetime: DateTime<Tz>,
@@ -127,21 +137,53 @@ fn parse_year_line<'a>(line: &'a str) -> Option<u16> {
         static ref YEAR_REGEX: Regex = Regex::new(r" CUP ([0-9]{4})\s+$").unwrap();
     }
 
-    YEAR_REGEX.captures(&line).and_then(|groups| Some(groups.get(1).expect("Year regex missing capture #1").as_str().parse::<u16>().expect("Year int parse failed")))
+    YEAR_REGEX.captures(&line).and_then(|groups| {
+        Some(
+            groups
+                .get(1)
+                .expect("Year regex missing capture #1")
+                .as_str()
+                .parse::<u16>()
+                .expect("Year int parse failed"),
+        )
+    })
 }
 
 fn parse_game_line<'a>(line: &'a str, year: u16) -> Result<Option<Game<'a, chrono_tz::Tz>>, Error> {
     lazy_static! {
-        static ref GAME_REGEX: Regex = Regex::new(r"^[A-Z]{3} ([A-Z]{3} [0-9 ]{2} +[0-9 ]{2}:[0-9]{2} [AP]M)  (.*) vs (.*)$").unwrap();
+        static ref GAME_REGEX: Regex =
+            Regex::new(r"^[A-Z]{3} ([A-Z]{3} [0-9 ]{2} +[0-9 ]{2}:[0-9]{2} [AP]M)  (.*) vs (.*)$")
+                .unwrap();
     }
 
     if let Some(groups) = GAME_REGEX.captures(&line) {
-        let datetime = groups.get(1).expect("Game regex missing capture #1").as_str().trim().to_string() + " " + &year.to_string();
-        let home = groups.get(2).expect("Game regex missing capture #2").as_str().trim();
-        let away = groups.get(3).expect("Game regex missing capture #3").as_str().trim();
+        let datetime = groups
+            .get(1)
+            .expect("Game regex missing capture #1")
+            .as_str()
+            .trim()
+            .to_string()
+            + " "
+            + &year.to_string();
+        let home = groups
+            .get(2)
+            .expect("Game regex missing capture #2")
+            .as_str()
+            .trim();
+        let away = groups
+            .get(3)
+            .expect("Game regex missing capture #3")
+            .as_str()
+            .trim();
 
-        let datetime = US::Pacific.datetime_from_str(&datetime, "%b %e %I:%M %p %Y").with_context(|e| {format!("Error parsing datetime string: {}: {}", e, &datetime)})?;
-        return Ok(Some(Game { home, away, datetime }));
+        let datetime = US::Pacific
+            .datetime_from_str(&datetime, "%b %e %I:%M %p %Y")
+            .with_context(|e| format!("Error parsing datetime string: {}: {}", e, &datetime))?;
+        return Ok(Some(Game {
+            home,
+            away,
+            datetime,
+        }));
     }
 
     Ok(None)
@@ -151,10 +193,7 @@ fn parse_game_line<'a>(line: &'a str, year: u16) -> Result<Option<Game<'a, chron
 mod tests {
     use super::*;
 
-    use std:: {
-        fs::*,
-        io::BufReader
-    };
+    use std::{fs::*, io::BufReader};
 
     #[test]
     fn datetime_parse() -> Result<(), Error> {
@@ -162,7 +201,9 @@ mod tests {
         // Year isn't specified in string, but must be for parsing
         to_parse.push_str(" 2019");
 
-        let dt = US::Pacific.datetime_from_str(&to_parse, "%a %b %e    %I:%M %p %Y").with_context(|e| {format!("Error parsing datetime string: {}", e)})?;
+        let dt = US::Pacific
+            .datetime_from_str(&to_parse, "%a %b %e    %I:%M %p %Y")
+            .with_context(|e| format!("Error parsing datetime string: {}", e))?;
         assert_eq!("2019-01-20T19:50:00-08:00", dt.to_rfc3339());
 
         Ok(())
@@ -174,7 +215,9 @@ mod tests {
         // Year isn't specified in string, but must be for parsing
         to_parse.push_str(" 2019");
 
-        let dt = US::Pacific.datetime_from_str(&to_parse, "%a %b %e    %I:%M %p %Y").with_context(|e| {format!("Error parsing datetime string: {}", e)})?;
+        let dt = US::Pacific
+            .datetime_from_str(&to_parse, "%a %b %e    %I:%M %p %Y")
+            .with_context(|e| format!("Error parsing datetime string: {}", e))?;
         assert_eq!("2019-01-20T19:50:00-08:00", dt.to_rfc3339());
 
         Ok(())
@@ -198,10 +241,19 @@ mod tests {
 
     #[test]
     fn parse_year_line_fall() {
-        assert_eq!(Some(2018), parse_year_line("                          SECOND FALL CUP 2018                             "))
+        assert_eq!(
+            Some(2018),
+            parse_year_line(
+                "                          SECOND FALL CUP 2018                             "
+            )
+        )
     }
 
-    fn convert_test_schedule_stdin(input: &str, expected: &str, team_name: &str) -> Result<(), Error> {
+    fn convert_test_schedule_stdin(
+        input: &str,
+        expected: &str,
+        team_name: &str,
+    ) -> Result<(), Error> {
         let input = BufReader::new(File::open(input)?);
 
         let calendar = schedule_to_ical(input, &team_name);
