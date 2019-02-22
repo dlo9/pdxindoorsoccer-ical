@@ -12,8 +12,12 @@ failure = "0.1.5"
 regex = "1.1.0"
 lazy_static = "1.2.0"
 heck = "0.3.1"
+reqwest = "0.9.10"
+encoding_rs = "0.8.16"
 structopt = "0.2.14"
 clap-verbosity-flag = { git = "https://github.com/dlo9/clap-verbosity-flag" }
 
 [patch.crates-io]
 structopt = { git = "https://github.com/dlo9/structopt" }
+#icalendar = { git = "https://github.com/dlo9/icalendar-rs" }
+icalendar = { path = "../icalendar-rs" }

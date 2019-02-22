@@ -3,6 +3,7 @@
 use chrono::*;
 use chrono_tz::*;
 use clap_verbosity_flag::Verbosity;
+use encoding_rs::*;
 use failure::*;
 use heck::TitleCase;
 use icalendar::*;
@@ -10,7 +11,8 @@ use lazy_static::*;
 use regex::Regex;
 use std::{
     fmt::Display,
-    io::{stdin, BufRead},
+    fs::File,
+    io::{stdin, BufRead, BufReader},
     path::PathBuf,
 };
 use structopt::*;
@@ -44,6 +46,9 @@ struct Cli {
     #[structopt(short = "i", long)]
     input: Option<PathBuf>,
 
+    #[structopt(short = "u", long, conflicts_with = "input")]
+    url: Option<String>,
+
     /// Team name to filter to
     // TODO: Make optional, no filter doesn't filter
     #[structopt(short = "t", long)]
@@ -53,7 +58,27 @@ struct Cli {
 fn main() -> Result<(), Error> {
     let args: Cli = StructOpt::from_args(None);
     let team_name = args.team_name.to_uppercase();
-    let calendar = schedule_to_ical(stdin().lock(), &team_name)?;
+    // TODO: do a single function call, but instead return here different objects all
+    // impl BufRead?
+    let calendar = if let Some(path) = args.input {
+        // TODO: decode?
+        schedule_to_ical(BufReader::new(File::open(path)?), &team_name)?
+    } else if let Some(url) = args.url {
+        let mut response = reqwest::get(&url)?;
+        let mut bytes: Vec<u8> = if let Some(len) = response.content_length() {
+            Vec::with_capacity(len as usize)
+        } else {
+            vec![]
+        };
+
+        // TODO: use with on line above
+        response.copy_to(&mut bytes)?;
+        let decoded = WINDOWS_1252.decode(bytes.as_ref()).0;
+        schedule_to_ical(decoded.as_ref().as_bytes(), &team_name)?
+    } else {
+        schedule_to_ical(stdin().lock(), &team_name)?
+    };
+
     calendar.print().context("Calendar could not be printed")?;
     Ok(())
 }
