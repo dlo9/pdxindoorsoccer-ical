@@ -25,11 +25,6 @@ use structopt::*;
     raw(setting = "structopt::clap::AppSettings::ColoredHelp")
 )]
 struct Cli {
-    // TODO: directory should be XDG_CONFIG_HOME or HOME
-    /// Configuration file to use
-    #[structopt(short = "c", long)]
-    config: Option<PathBuf>,
-
     #[structopt(flatten)]
     verbosity: Verbosity,
 
