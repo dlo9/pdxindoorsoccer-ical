@@ -1,5 +1,6 @@
 #![feature(try_trait)]
 
+use caseless::default_caseless_match_str;
 use chrono::*;
 use chrono_tz::*;
 use clap_verbosity_flag::Verbosity;
@@ -57,12 +58,11 @@ struct Cli {
 
 fn main() -> Result<(), Error> {
     let args: Cli = StructOpt::from_args(None);
-    let team_name = args.team_name.to_uppercase();
     // TODO: do a single function call, but instead return here different objects all
     // impl BufRead?
     let calendar = if let Some(path) = args.input {
         // TODO: decode?
-        schedule_to_ical(BufReader::new(File::open(path)?), &team_name)?
+        schedule_to_ical(BufReader::new(File::open(path)?), &args.team_name)?
     } else if let Some(url) = args.url {
         let mut response = reqwest::get(&url)?;
         let mut bytes: Vec<u8> = if let Some(len) = response.content_length() {
@@ -74,16 +74,16 @@ fn main() -> Result<(), Error> {
         // TODO: use with on line above
         response.copy_to(&mut bytes)?;
         let decoded = WINDOWS_1252.decode(bytes.as_ref()).0;
-        schedule_to_ical(decoded.as_ref().as_bytes(), &team_name)?
+        schedule_to_ical(decoded.as_ref().as_bytes(), &args.team_name)?
     } else {
-        schedule_to_ical(stdin().lock(), &team_name)?
+        schedule_to_ical(stdin().lock(), &args.team_name)?
     };
 
     calendar.print().context("Calendar could not be printed")?;
     Ok(())
 }
 
-fn schedule_to_ical(input: impl BufRead, team_name_uppercase: &str) -> Result<Calendar, Error> {
+fn schedule_to_ical(input: impl BufRead, team_name: &str) -> Result<Calendar, Error> {
     let mut calendar = Calendar::new();
     let mut year = 0;
     let mut last_month = 0;
@@ -103,7 +103,7 @@ fn schedule_to_ical(input: impl BufRead, team_name_uppercase: &str) -> Result<Ca
 
             last_month = game.datetime.date().month();
 
-            if game.home == team_name_uppercase || game.away == team_name_uppercase {
+            if default_caseless_match_str(game.home, team_name) || default_caseless_match_str(game.away, team_name) {
                 let home = fc_to_uppercase(game.home.to_title_case());
                 let away = fc_to_uppercase(game.away.to_title_case());
                 let game = Game {

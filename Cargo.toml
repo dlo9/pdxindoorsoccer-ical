@@ -16,6 +16,7 @@ reqwest = "0.9.10"
 encoding_rs = "0.8.16"
 structopt = "0.2.14"
 clap-verbosity-flag = { git = "https://github.com/dlo9/clap-verbosity-flag" }
+caseless = "0.2.1"
 
 [patch.crates-io]
 structopt = { git = "https://github.com/dlo9/structopt" }
