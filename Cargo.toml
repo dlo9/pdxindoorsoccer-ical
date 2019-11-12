@@ -20,3 +20,4 @@ caseless = "0.2.1"
 
 [patch.crates-io]
 structopt = { git = "https://github.com/dlo9/structopt" }
+icalendar = { git = "https://github.com/dlo9/icalendar-rs" }
