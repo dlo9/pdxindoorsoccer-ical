@@ -154,7 +154,7 @@ where
 
 fn parse_year_line<'a>(line: &'a str) -> Option<u16> {
     lazy_static! {
-        static ref YEAR_REGEX: Regex = Regex::new(r" CUP ([0-9]{4})\s+$").unwrap();
+        static ref YEAR_REGEX: Regex = Regex::new(r" CUP ([0-9]{4})\s*$").unwrap();
     }
 
     YEAR_REGEX.captures(&line).and_then(|groups| {
@@ -252,6 +252,14 @@ mod tests {
     }
 
     #[test]
+    fn convert_new_schedule_unknown_issue() -> Result<(), Error> {
+        let input = "test/winter/input.txt";
+        let expected = "test/winter/expected.ical";
+        let team_name = "Friend Hotel".to_string().to_uppercase();
+        convert_test_schedule_stdin(input, expected, &team_name)
+    }
+
+    #[test]
     fn convert_test_schedule_stdin_year_boundary() -> Result<(), Error> {
         let input = "test/fall/input.txt";
         let expected = "test/fall/expected.ical";
@@ -265,6 +273,16 @@ mod tests {
             Some(2018),
             parse_year_line(
                 "                          SECOND FALL CUP 2018                             "
+            )
+        )
+    }
+
+    #[test]
+    fn parse_year_line_winter() {
+        assert_eq!(
+            Some(2020),
+            parse_year_line(
+                "		           WINTER CUP 2020"
             )
         )
     }
