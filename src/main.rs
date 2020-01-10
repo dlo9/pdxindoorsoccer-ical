@@ -137,7 +137,7 @@ fn game_to_event<'a>(game: Game<'a, chrono_tz::Tz>) -> Event {
     Event::new()
         .summary(&(game.home.to_string() + " (home) vs. " + game.away))
         .description("Home team brings ball & all colors")
-        .location("Portland Indoor Soccer\n418 SE Main St.\nPortland, OR 97214")
+        .location("Portland Indoor Soccer\n418 SE Main St.\nPortland\\, OR 97214")
         .starts(game.datetime)
         .ends(game.datetime + Duration::minutes(44 + 2))
         .done()
