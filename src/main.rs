@@ -133,13 +133,14 @@ fn fc_to_uppercase(s: String) -> String {
         .unwrap_or(s)
 }
 
-fn game_to_event<'a>(game: Game<'a, chrono_tz::Tz>) -> Event {
+fn game_to_event<'a>(Game { home, away, datetime, }: Game<'a, chrono_tz::Tz>) -> Event {
+    let datetime: DateTime<Utc> = datetime.with_timezone(&Utc);
     Event::new()
-        .summary(&(game.home.to_string() + " (home) vs. " + game.away))
+        .summary(&(home.to_string() + " (home) vs. " + away))
         .description("Home team brings ball & all colors")
         .location("Portland Indoor Soccer\n418 SE Main St.\nPortland\\, OR 97214")
-        .starts(game.datetime)
-        .ends(game.datetime + Duration::minutes(44 + 2))
+        .starts(datetime)
+        .ends(datetime + Duration::minutes(44 + 2))
         .done()
 }
 
