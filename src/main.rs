@@ -3,7 +3,6 @@
 use caseless::default_caseless_match_str;
 use chrono::*;
 use chrono_tz::*;
-use clap_verbosity_flag::Verbosity;
 use encoding_rs::*;
 use failure::*;
 use heck::TitleCase;
@@ -22,12 +21,9 @@ use structopt::*;
 #[structopt(
     name = "pdxindoorsoccer-ical",
     rename_all = "kebab-case",
-    raw(setting = "structopt::clap::AppSettings::ColoredHelp")
+    setting = structopt::clap::AppSettings::ColoredHelp,
 )]
-struct Cli {
-    #[structopt(flatten)]
-    verbosity: Verbosity,
-
+struct Args {
     /// Output ical file. If not specified, stdout is used.
     // TODO: unconnected
     #[structopt(short = "o", long)]
@@ -51,8 +47,8 @@ struct Cli {
     team_name: String,
 }
 
-fn main() -> Result<(), Error> {
-    let args: Cli = StructOpt::from_args(None);
+#[paw::main]
+fn main(args: Args) -> Result<(), Error> {
     // TODO: do a single function call, but instead return here different objects all
     // impl BufRead?
     let calendar = if let Some(path) = args.input {
