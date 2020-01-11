@@ -99,19 +99,29 @@ fn schedule_to_ical(input: impl BufRead, team_name: &str) -> Result<Calendar, Er
             last_month = game.datetime.date().month();
 
             if default_caseless_match_str(game.home, team_name) || default_caseless_match_str(game.away, team_name) {
-                let home = fc_to_uppercase(game.home.to_title_case());
-                let away = fc_to_uppercase(game.away.to_title_case());
+                let home = game.home.fix_case();
+                let away = game.away.fix_case();
                 let game = Game {
                     home: &home,
                     away: &away,
                     ..game
                 };
-                calendar.push(game_to_event(game));
+                calendar.push(Event::from(game));
             }
         }
     }
 
     Ok(calendar)
+}
+
+trait StrExt {
+    fn fix_case(&self) -> String;
+}
+
+impl StrExt for &str {
+    fn fix_case(&self) -> String {
+        fc_to_uppercase(self.to_title_case())
+    }
 }
 
 /// Forces the casing of FC to uppercase
@@ -133,17 +143,6 @@ fn fc_to_uppercase(s: String) -> String {
         .unwrap_or(s)
 }
 
-fn game_to_event<'a>(Game { home, away, datetime, }: Game<'a, chrono_tz::Tz>) -> Event {
-    let datetime: DateTime<Utc> = datetime.with_timezone(&Utc);
-    Event::new()
-        .summary(&(home.to_string() + " (home) vs. " + away))
-        .description("Home team brings ball & all colors")
-        .location("Portland Indoor Soccer\n418 SE Main St.\nPortland\\, OR 97214")
-        .starts(datetime)
-        .ends(datetime + Duration::minutes(44 + 2))
-        .done()
-}
-
 struct Game<'a, Tz: TimeZone>
 where
     Tz::Offset: Display,
@@ -151,6 +150,19 @@ where
     home: &'a str,
     away: &'a str,
     datetime: DateTime<Tz>,
+}
+
+impl<'a> From<Game<'a, chrono_tz::Tz>> for Event {
+    fn from(Game { home, away, datetime, }: Game<'a, chrono_tz::Tz>) -> Self {
+        let datetime: DateTime<Utc> = datetime.with_timezone(&Utc);
+        Event::new()
+            .summary(&(home.to_string() + " (home) vs. " + away))
+            .description("Home team brings ball & all colors")
+            .location("Portland Indoor Soccer\n418 SE Main St.\nPortland\\, OR 97214")
+            .starts(datetime)
+            .ends(datetime + Duration::minutes(44 + 2))
+            .done()
+    }
 }
 
 fn parse_year_line<'a>(line: &'a str) -> Option<u16> {
