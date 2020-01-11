@@ -98,7 +98,9 @@ fn schedule_to_ical(input: impl BufRead, team_name: &str) -> Result<Calendar, Er
 
             last_month = game.datetime.date().month();
 
-            if default_caseless_match_str(game.home, team_name) || default_caseless_match_str(game.away, team_name) {
+            if default_caseless_match_str(game.home, team_name)
+                || default_caseless_match_str(game.away, team_name)
+            {
                 let home = game.home.fix_case();
                 let away = game.away.fix_case();
                 let game = Game {
@@ -153,7 +155,13 @@ where
 }
 
 impl<'a> From<Game<'a, chrono_tz::Tz>> for Event {
-    fn from(Game { home, away, datetime, }: Game<'a, chrono_tz::Tz>) -> Self {
+    fn from(
+        Game {
+            home,
+            away,
+            datetime,
+        }: Game<'a, chrono_tz::Tz>,
+    ) -> Self {
         let datetime: DateTime<Utc> = datetime.with_timezone(&Utc);
         Event::new()
             .summary(&(home.to_string() + " (home) vs. " + away))
@@ -292,12 +300,7 @@ mod tests {
 
     #[test]
     fn parse_year_line_winter() {
-        assert_eq!(
-            Some(2020),
-            parse_year_line(
-                "		           WINTER CUP 2020"
-            )
-        )
+        assert_eq!(Some(2020), parse_year_line("		           WINTER CUP 2020"))
     }
 
     fn convert_test_schedule_stdin(
