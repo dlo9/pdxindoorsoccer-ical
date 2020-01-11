@@ -12,11 +12,12 @@ failure = "0.1.5"
 regex = "1.1.0"
 lazy_static = "1.2.0"
 heck = "0.3.1"
-reqwest = "0.9.10"
+reqwest = "0.10.1"
 encoding_rs = "0.8.16"
 structopt = { version = "0.3.0", features = [ "paw" ] }
 paw = "1.0"
 caseless = "0.2.1"
+futures = "0.3.1"
 
 [patch.crates-io]
 icalendar = { git = "https://github.com/dlo9/icalendar-rs" }

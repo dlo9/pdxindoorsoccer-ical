@@ -49,22 +49,18 @@ struct Args {
 
 #[paw::main]
 fn main(args: Args) -> Result<(), Error> {
+    futures::executor::block_on(main_async(args))
+}
+
+async fn main_async(args: Args) -> Result<(), Error> {
     // TODO: do a single function call, but instead return here different objects all
     // impl BufRead?
     let calendar = if let Some(path) = args.input {
         // TODO: decode?
         schedule_to_ical(BufReader::new(File::open(path)?), &args.team_name)?
     } else if let Some(url) = args.url {
-        let mut response = reqwest::get(&url)?;
-        let mut bytes: Vec<u8> = if let Some(len) = response.content_length() {
-            Vec::with_capacity(len as usize)
-        } else {
-            vec![]
-        };
-
-        // TODO: use with on line above
-        response.copy_to(&mut bytes)?;
-        let decoded = WINDOWS_1252.decode(bytes.as_ref()).0;
+        let response = reqwest::get(&url).await?.bytes().await?;
+        let decoded = WINDOWS_1252.decode(&response).0;
         schedule_to_ical(decoded.as_ref().as_bytes(), &args.team_name)?
     } else {
         schedule_to_ical(stdin().lock(), &args.team_name)?
