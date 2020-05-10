@@ -4,7 +4,7 @@ use caseless::default_caseless_match_str;
 use chrono::*;
 use chrono_tz::*;
 use encoding_rs::*;
-use failure::*;
+use anyhow::{Context, Result};
 use heck::TitleCase;
 use icalendar::*;
 use lazy_static::*;
@@ -48,11 +48,11 @@ struct Args {
 }
 
 #[paw::main]
-fn main(args: Args) -> Result<(), Error> {
+fn main(args: Args) -> Result<()> {
     futures::executor::block_on(main_async(args))
 }
 
-async fn main_async(args: Args) -> Result<(), Error> {
+async fn main_async(args: Args) -> Result<()> {
     // TODO: do a single function call, but instead return here different objects all
     // impl BufRead?
     let calendar = if let Some(path) = args.input {
@@ -70,7 +70,7 @@ async fn main_async(args: Args) -> Result<(), Error> {
     Ok(())
 }
 
-fn schedule_to_ical(input: impl BufRead, team_name: &str) -> Result<Calendar, Error> {
+fn schedule_to_ical(input: impl BufRead, team_name: &str) -> Result<Calendar> {
     let mut calendar = Calendar::new();
     let mut year = 0;
     let mut last_month = 0;
@@ -182,7 +182,7 @@ fn parse_year_line<'a>(line: &'a str) -> Option<u16> {
     })
 }
 
-fn parse_game_line<'a>(line: &'a str, year: u16) -> Result<Option<Game<'a, chrono_tz::Tz>>, Error> {
+fn parse_game_line<'a>(line: &'a str, year: u16) -> Result<Option<Game<'a, chrono_tz::Tz>>> {
     lazy_static! {
         static ref GAME_REGEX: Regex =
             Regex::new(r"^[A-Z]{3} ([A-Z]{3} [0-9 ]{2} +[0-9 ]{2}:[0-9]{2} [AP]M)  (.*) vs (.*)$")
@@ -211,7 +211,7 @@ fn parse_game_line<'a>(line: &'a str, year: u16) -> Result<Option<Game<'a, chron
 
         let datetime = US::Pacific
             .datetime_from_str(&datetime, "%b %e %I:%M %p %Y")
-            .with_context(|e| format!("Error parsing datetime string: {}: {}", e, &datetime))?;
+            .with_context(|| format!("Failed to parse datetime string: {}", &datetime))?;
         return Ok(Some(Game {
             home,
             away,
@@ -229,35 +229,35 @@ mod tests {
     use std::{fs::*, io::BufReader};
 
     #[test]
-    fn datetime_parse() -> Result<(), Error> {
-        let mut to_parse = "SUN Jan 20    7:50 PM".to_string();
+    fn datetime_parse() -> Result<()> {
+        let mut datetime = "SUN Jan 20    7:50 PM".to_string();
         // Year isn't specified in string, but must be for parsing
-        to_parse.push_str(" 2019");
+        datetime.push_str(" 2019");
 
         let dt = US::Pacific
-            .datetime_from_str(&to_parse, "%a %b %e    %I:%M %p %Y")
-            .with_context(|e| format!("Error parsing datetime string: {}", e))?;
+            .datetime_from_str(&datetime, "%a %b %e    %I:%M %p %Y")
+            .with_context(|| format!("Failed to parse datetime string: {}", &datetime))?;
         assert_eq!("2019-01-20T19:50:00-08:00", dt.to_rfc3339());
 
         Ok(())
     }
 
     #[test]
-    fn datetime_fewer_spaces_parse() -> Result<(), Error> {
-        let mut to_parse = "SUN Jan 20 7:50 PM".to_string();
+    fn datetime_fewer_spaces_parse() -> Result<()> {
+        let mut datetime = "SUN Jan 20 7:50 PM".to_string();
         // Year isn't specified in string, but must be for parsing
-        to_parse.push_str(" 2019");
+        datetime.push_str(" 2019");
 
         let dt = US::Pacific
-            .datetime_from_str(&to_parse, "%a %b %e    %I:%M %p %Y")
-            .with_context(|e| format!("Error parsing datetime string: {}", e))?;
+            .datetime_from_str(&datetime, "%a %b %e    %I:%M %p %Y")
+            .with_context(|| format!("Failed to parse datetime string: {}", &datetime))?;
         assert_eq!("2019-01-20T19:50:00-08:00", dt.to_rfc3339());
 
         Ok(())
     }
 
     #[test]
-    fn convert_test_schedule_stdin_same_year() -> Result<(), Error> {
+    fn convert_test_schedule_stdin_same_year() -> Result<()> {
         let input = "test/div3b/input.txt";
         let expected = "test/div3b/expected.ical";
         let team_name = "Real Portland".to_string().to_uppercase();
@@ -265,7 +265,7 @@ mod tests {
     }
 
     #[test]
-    fn convert_new_schedule_unknown_issue() -> Result<(), Error> {
+    fn convert_new_schedule_unknown_issue() -> Result<()> {
         let input = "test/winter/input.txt";
         let expected = "test/winter/expected.ical";
         let team_name = "Friend Hotel".to_string().to_uppercase();
@@ -273,7 +273,7 @@ mod tests {
     }
 
     #[test]
-    fn convert_test_schedule_stdin_year_boundary() -> Result<(), Error> {
+    fn convert_test_schedule_stdin_year_boundary() -> Result<()> {
         let input = "test/fall/input.txt";
         let expected = "test/fall/expected.ical";
         let team_name = "Hyventus".to_string().to_uppercase();
@@ -299,7 +299,7 @@ mod tests {
         input: &str,
         expected: &str,
         team_name: &str,
-    ) -> Result<(), Error> {
+    ) -> Result<()> {
         let input = BufReader::new(File::open(input)?);
 
         let calendar = schedule_to_ical(input, &team_name);
