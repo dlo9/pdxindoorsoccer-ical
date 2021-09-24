@@ -47,7 +47,11 @@ struct Args {
 
 #[paw::main]
 fn main(args: Args) -> Result<()> {
-    futures::executor::block_on(main_async(args))
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .unwrap()
+        .block_on(main_async(args))
 }
 
 async fn main_async(args: Args) -> Result<()> {
