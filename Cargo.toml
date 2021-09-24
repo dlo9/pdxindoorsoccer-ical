@@ -6,6 +6,8 @@ edition = "2018"
 resolver = "2"
 
 [dependencies]
+color-backtrace = "0.5.1"
+
 icalendar = "0.10.0"
 chrono = "0.4.6"
 chrono-tz = "0.6.0"

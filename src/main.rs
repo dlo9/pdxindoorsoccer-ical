@@ -47,6 +47,7 @@ struct Args {
 
 #[paw::main]
 fn main(args: Args) -> Result<()> {
+    color_backtrace::install();
     tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
