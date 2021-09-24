@@ -1,5 +1,3 @@
-#![feature(try_trait)]
-
 use caseless::default_caseless_match_str;
 use chrono::*;
 use chrono_tz::*;
