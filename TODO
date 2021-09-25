@@ -1,8 +1,11 @@
-Command line args:
+- [ ] Command line args:
 	- stdin vs read from file, read from url
 	- output to stdout vs file
-
-Web page for conversions 
-CI
-
-Cose conversion (https://crates.io/crates/heck)
+- [ ] Web page interface
+- [ ] CI
+- [ ] [VALARM](https://datatracker.ietf.org/doc/html/rfc5545#section-3.6.6) for notifications
+	- `--email` argument
+	- `--email-before <duration>` argument (allow multiple)
+	- `--notify-before <duration>` argument (allow multiple)
+- [ ] `anyhow` for errors
+- [ ] Reproducibility: seed event UUIDs
