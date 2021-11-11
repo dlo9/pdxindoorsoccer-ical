@@ -33,6 +33,7 @@ use std::{
     path::PathBuf,
 };
 use structopt::StructOpt;
+use uuid::Uuid;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -173,7 +174,9 @@ impl<'a> From<Game<'a, chrono_tz::Tz>> for Event {
         }: Game<'a, chrono_tz::Tz>,
     ) -> Self {
         let datetime: DateTime<Utc> = datetime.with_timezone(&Utc);
+        let id = Uuid::new_v5(&Uuid::NAMESPACE_OID, [home.as_bytes(), away.as_bytes()].concat().as_slice());
         Event::new()
+            .uid(&id.to_string())
             .summary(&(home.to_string() + " (home) vs. " + away))
             .description("Home team brings ball & all colors")
             .location("Portland Indoor Soccer\n418 SE Main St.\nPortland\\, OR 97214")
@@ -323,15 +326,16 @@ mod tests {
         let actual = calendar?.to_string();
 
         // Sort lines since to_string isn't deterministically ordered
-        // Also strip randomized UID & DTSTAMP
+        // Also strip creation timestamp DTSTAMP
         let mut expected = expected
             .split("\r\n")
-            .filter(|i| !(i.starts_with("DTSTAMP") || i.starts_with("UID")))
+            .filter(|i| !(i.starts_with("DTSTAMP")))
             .collect::<Vec<&str>>();
         expected.sort_unstable();
+
         let mut actual = actual
             .split("\r\n")
-            .filter(|i| !(i.starts_with("DTSTAMP") || i.starts_with("UID")))
+            .filter(|i| !(i.starts_with("DTSTAMP")))
             .collect::<Vec<&str>>();
         actual.sort_unstable();
 
