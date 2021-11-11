@@ -1,19 +1,38 @@
+#![warn(clippy::wildcard_imports)]
+
+use anyhow::{
+    Context,
+    Result,
+};
 use caseless::default_caseless_match_str;
-use chrono::*;
-use chrono_tz::*;
-use encoding_rs::*;
-use anyhow::{Context, Result};
+use chrono::{
+    DateTime,
+    Datelike,
+    Duration,
+    TimeZone,
+    Utc,
+};
+use chrono_tz::US;
+use encoding_rs::WINDOWS_1252;
 use heck::TitleCase;
-use icalendar::*;
-use lazy_static::*;
+use icalendar::{
+    Calendar,
+    Component,
+    Event,
+};
+use lazy_static::lazy_static;
 use regex::Regex;
 use std::{
     fmt::Display,
     fs::File,
-    io::{stdin, BufRead, BufReader},
+    io::{
+        stdin,
+        BufRead,
+        BufReader,
+    },
     path::PathBuf,
 };
-use structopt::*;
+use structopt::StructOpt;
 
 #[derive(Debug, StructOpt)]
 #[structopt(
@@ -25,11 +44,7 @@ struct Args {
     /// Output ical file. If not specified, stdout is used.
     // TODO: unconnected
     #[structopt(short = "o", long)]
-    output: Option<PathBuf>,
-
-    /// Dry run
-    #[structopt(short = "n", long)]
-    dry_run: bool,
+    //output: Option<PathBuf>,
 
     /// Input text file. If not specified, stdin is used.
     // TODO: accept - as stdin?
@@ -168,31 +183,29 @@ impl<'a> From<Game<'a, chrono_tz::Tz>> for Event {
     }
 }
 
-fn parse_year_line<'a>(line: &'a str) -> Option<u16> {
+fn parse_year_line(line: &str) -> Option<u16> {
     lazy_static! {
         static ref YEAR_REGEX: Regex = Regex::new(r" CUP ([0-9]{4})\s*$").unwrap();
     }
 
-    YEAR_REGEX.captures(&line).and_then(|groups| {
-        Some(
-            groups
-                .get(1)
-                .expect("Year regex missing capture #1")
-                .as_str()
-                .parse::<u16>()
-                .expect("Year int parse failed"),
-        )
+    YEAR_REGEX.captures(line).map(|groups| {
+        groups
+            .get(1)
+            .expect("Year regex missing capture #1")
+            .as_str()
+            .parse::<u16>()
+            .expect("Year int parse failed")
     })
 }
 
-fn parse_game_line<'a>(line: &'a str, year: u16) -> Result<Option<Game<'a, chrono_tz::Tz>>> {
+fn parse_game_line(line: &str, year: u16) -> Result<Option<Game<chrono_tz::Tz>>> {
     lazy_static! {
         static ref GAME_REGEX: Regex =
             Regex::new(r"^[A-Z]{3} ([A-Z]{3} [0-9 ]{2} +[0-9 ]{2}:[0-9]{2} [AP]M)  (.*) vs (.*)$")
                 .unwrap();
     }
 
-    if let Some(groups) = GAME_REGEX.captures(&line) {
+    if let Some(groups) = GAME_REGEX.captures(line) {
         let datetime = groups
             .get(1)
             .expect("Game regex missing capture #1")
@@ -229,7 +242,10 @@ fn parse_game_line<'a>(line: &'a str, year: u16) -> Result<Option<Game<'a, chron
 mod tests {
     use super::*;
 
-    use std::{fs::*, io::BufReader};
+    use std::{
+        fs::*,
+        io::BufReader,
+    };
 
     #[test]
     fn datetime_parse() -> Result<()> {
@@ -298,11 +314,7 @@ mod tests {
         assert_eq!(Some(2020), parse_year_line("		           WINTER CUP 2020"))
     }
 
-    fn convert_test_schedule_stdin(
-        input: &str,
-        expected: &str,
-        team_name: &str,
-    ) -> Result<()> {
+    fn convert_test_schedule_stdin(input: &str, expected: &str, team_name: &str) -> Result<()> {
         let input = BufReader::new(File::open(input)?);
 
         let calendar = schedule_to_ical(input, &team_name);
