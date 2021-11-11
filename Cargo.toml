@@ -2,8 +2,7 @@
 name = "pdxindoorsoccer-ical"
 version = "0.1.0"
 authors = ["David Orchard <if_coding@fastmail.com>"]
-edition = "2018"
-resolver = "2"
+edition = "2021"
 
 [dependencies]
 color-backtrace = "0.5.1"
