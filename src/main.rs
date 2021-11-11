@@ -137,10 +137,10 @@ impl StrExt for &str {
     }
 }
 
-/// Forces the casing of FC to uppercase
+/// Forces the casing of AC/FC to uppercase
 fn fc_to_uppercase(s: String) -> String {
     lazy_static! {
-        static ref FC_REGEX: Regex = Regex::new(r#"(.*\b)((?i)\w*fc)(\b.*)"#).unwrap();
+        static ref FC_REGEX: Regex = Regex::new(r#"(.*\b)((?i)\w*(a|f)c)(\b.*)"#).unwrap();
     }
 
     FC_REGEX
@@ -150,7 +150,7 @@ fn fc_to_uppercase(s: String) -> String {
                 "{}{}{}",
                 c.get(1).unwrap().as_str(),
                 c.get(2).unwrap().as_str().to_uppercase(),
-                c.get(3).unwrap().as_str()
+                c.get(4).unwrap().as_str()
             )
         })
         .unwrap_or(s)
