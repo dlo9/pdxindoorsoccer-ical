@@ -3,6 +3,7 @@ name = "pdxindoorsoccer-ical"
 version = "0.1.0"
 authors = ["David Orchard <if_coding@fastmail.com>"]
 edition = "2021"
+license = "MIT"
 
 [dependencies]
 
