@@ -320,7 +320,7 @@ mod tests {
     fn convert_test_schedule_stdin(input: &str, expected: &str, team_name: &str) -> Result<()> {
         let input = BufReader::new(File::open(input)?);
 
-        let calendar = schedule_to_ical(input, &team_name);
+        let calendar = schedule_to_ical(input, team_name);
 
         let expected = read_to_string(expected)?;
         let actual = calendar?.to_string();
